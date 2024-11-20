@@ -1,10 +1,11 @@
 # Code to generate BIEN annotation statistics
 
 library(BIEN)
+library(tidyverse)
 
 # Total number of records in view_full_occurrence_individual
 
-BIEN:::.BIEN_sql(query = "SELECT count(*)
+total <- BIEN:::.BIEN_sql(query = "SELECT count(*)
                           FROM view_full_occurrence_individual ;")
 
 #284466171
@@ -64,17 +65,33 @@ hpg_breakdown_by_spp <-
                           WHERE scrubbed_species_binomial IS NOT NULL
                           GROUP BY higher_plant_group
                           ORDER BY total DESC;")
+# higher_plant_group  total
+# 1          flowering plants 404043
+# 2                bryophytes  31556
+# 3          ferns and allies  20921
+# 4    gymnosperms (conifers)    978
+# 5                      <NA>    957
+# 6 gymnosperms (non-conifer)    451
+# 7                     Fungi     13
+# 8                     Algae      2
+# 9                  Bacteria      1
 
 
 hpg_breakdown_by_spp_only_accepts <- 
   BIEN:::.BIEN_sql(query = "SELECT higher_plant_group, COUNT(DISTINCT(scrubbed_species_binomial)) AS total
                           FROM view_full_occurrence_individual
                           WHERE scrubbed_species_binomial IS NOT NULL
-                          AND scrubbed_taxonomic_status = 'accepted' 
+                          AND scrubbed_taxonomic_status = 'Accepted' 
                           GROUP BY higher_plant_group
                           ORDER BY total DESC;")
 
-  
+# 1          flowering plants 323377
+# 2                bryophytes  26808
+# 3          ferns and allies  12102
+# 4    gymnosperms (conifers)    856
+# 5                      <NA>    786
+# 6 gymnosperms (non-conifer)    424
+# 7                     Fungi     12  
 
 bien_head <- BIEN:::.BIEN_sql("SELECT * FROM view_full_occurrence_individual LIMIT 1 ;")
 
@@ -88,3 +105,64 @@ tax_status_breakdown <- BIEN:::.BIEN_sql("SELECT scrubbed_taxonomic_status, coun
 # 1                  Accepted 259265077
 # 2                No opinion  10270675
 
+
+# How many species have the verbatim name correct?
+
+verbatim_correct <- BIEN:::.BIEN_sql("SELECT count(*) FROM view_full_occurrence_individual
+                                     WHERE verbatim_scientific_name = scrubbed_taxon_name_no_author ;"
+                              )
+
+verbatim_correct <- BIEN:::.BIEN_sql("SELECT count(*) FROM view_full_occurrence_individual
+                                     WHERE (verbatim_scientific_name = name_matched) AND
+                                     verbatim_scientific_name != ;"
+)
+
+
+
+# annotation table
+
+#geovalidation
+  geovalid <- BIEN:::.BIEN_sql("SELECT is_geovalid, count(*)
+                               FROM view_full_occurrence_individual
+                               GROUP BY is_geovalid ;")
+  
+    geovalid %>%
+      mutate(percent = count/sum(count))
+
+#cultivation    
+  not_cultivated <- BIEN:::.BIEN_sql("SELECT count(*) as not_cultivated
+                               FROM view_full_occurrence_individual
+                               WHERE ((is_cultivated_observation = 0 OR is_cultivated_observation IS NULL) AND is_location_cultivated IS NULL);")
+
+  
+  not_cultivated$not_cultivated/total$count
+  ((total$count - not_cultivated)/total$count)*100
+  
+  
+#non-native
+  
+  is_introduced_breakdown <- BIEN:::.BIEN_sql("SELECT is_introduced, count(*) AS total
+                               FROM view_full_occurrence_individual
+                              GROUP BY is_introduced
+                              ORDER By total DESC ;")
+  
+  
+  
+  
+WHERE scrubbed_species_binomial in ( 'x' )
+AND (is_cultivated_observation = 0 OR is_cultivated_observation IS NULL) AND is_location_cultivated IS NULL
+AND (is_introduced=0 OR is_introduced IS NULL)
+AND observation_type IN ('plot','specimen','literature','checklist')
+AND is_geovalid = 1
+AND higher_plant_group NOT IN ('Algae','Bacteria','Fungi')
+AND (georef_protocol is NULL OR georef_protocol<>'county centroid')
+AND (is_centroid IS NULL OR is_centroid=0)
+AND scrubbed_species_binomial IS NOT NULL ;"
+
+
+bien_head$verbatim_scientific_name
+bien_head$name_submitted
+bien_head$scrubbed_taxon_canonical
+bien_head$scrubbed_taxon_name_with_author
+bien_head$scrubbed_taxon_name_no_author
+bien_head$name_matched
