@@ -146,9 +146,48 @@ verbatim_correct <- BIEN:::.BIEN_sql("SELECT count(*) FROM view_full_occurrence_
                               GROUP BY is_introduced
                               ORDER By total DESC ;")
   
+  is_introduced_breakdown %>%
+    mutate(percent = (total/sum(total))*100)
   
+  74008865+28393107
   
+#centroid  
   
+  centroids <- BIEN:::.BIEN_sql("SELECT count(*) AS total
+                               FROM view_full_occurrence_individual
+                              WHERE georef_protocol='county centroid'OR is_centroid=1 ;")
+  
+  (centroids$total/total$count)*100
+  
+# taxonomy
+  
+  correct_names <- BIEN:::.BIEN_sql("SELECT count(*) AS total
+                                    FROM view_full_occurrence_individual
+                                    WHERE scrubbed_species_binomial=verbatim_scientific_name  ;")
+  
+  (total$count - correct_names$total)/total$count
+
+
+  matched_status_breakdown <- BIEN:::.BIEN_sql("SELECT matched_taxonomic_status, count(*) AS total
+                               FROM view_full_occurrence_individual
+                              GROUP BY matched_taxonomic_status
+                              ORDER By total DESC ;")
+
+    matched_status_breakdown %>%
+    mutate(pct = ((total/sum(total))*100) %>%
+             round(digits = 2))
+  
+    matched_status_specimens_breakdown <- BIEN:::.BIEN_sql("SELECT matched_taxonomic_status, count(*) AS total
+                               FROM view_full_occurrence_individual
+                               WHERE observation_type IN ('specimen')
+                              GROUP BY matched_taxonomic_status
+                              ORDER By total DESC ;")
+    
+    
+
+bien_head$matched_taxonomic_status
+  
+
 WHERE scrubbed_species_binomial in ( 'x' )
 AND (is_cultivated_observation = 0 OR is_cultivated_observation IS NULL) AND is_location_cultivated IS NULL
 AND (is_introduced=0 OR is_introduced IS NULL)
