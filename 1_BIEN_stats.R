@@ -8,14 +8,8 @@ library(tidyverse)
   total <- BIEN:::.BIEN_sql(query = "SELECT count(*)
                             FROM view_full_occurrence_individual ;")
 
-  #284466171
+  #284466171 # Total number of records in vfoi
 
-# Total number of records in vfoi
-
-
-  BIEN:::.BIEN_sql(query = "SELECT distinct observation_type FROM view_full_occurrence_individual ;")
-
-  #284466171
 
 # Total of different observation types
 
@@ -55,14 +49,8 @@ library(tidyverse)
   OpenRange:::ranges_sql("Select COUNT(*) from ranges.range;")  #289743 maps in Open Range
   OpenRange:::ranges_sql("Select COUNT(DISTINCT(species)) from ranges.range;") #112953 species in Open Range
   
-# Number of species by hpg
+# Number of records by hpg
   
-  #Angiosperms
-  #Gymnosperms
-  #Ferns
-  #Bryophytes
-  
-
   hpg_breakdown <- 
       BIEN:::.BIEN_sql(query = "SELECT higher_plant_group, COUNT(*) AS total
                             FROM view_full_occurrence_individual
@@ -79,6 +67,8 @@ library(tidyverse)
   # 7                     Fungi       415
   # 8                     Algae         5
   # 9                  Bacteria         2
+
+# Number of species per hpg
 
   hpg_breakdown_by_spp <- 
     BIEN:::.BIEN_sql(query = "SELECT higher_plant_group, COUNT(DISTINCT(scrubbed_species_binomial)) AS total
@@ -114,7 +104,8 @@ library(tidyverse)
   # 6 gymnosperms (non-conifer)    424
   # 7                     Fungi     12  
 
-  bien_head <- BIEN:::.BIEN_sql("SELECT * FROM view_full_occurrence_individual LIMIT 1 ;")
+  
+# Taxonomic status
   
   tax_status_breakdown <- BIEN:::.BIEN_sql("SELECT scrubbed_taxonomic_status, count(*) AS total
                                  FROM view_full_occurrence_individual
@@ -125,9 +116,34 @@ library(tidyverse)
   # scrubbed_taxonomic_status     total
   # 1                  Accepted 259265077
   # 2                No opinion  10270675
+  
+  tax_status_breakdownv2 <- BIEN:::.BIEN_sql("SELECT scrubbed_taxonomic_status, count(*) AS total
+                                 FROM view_full_occurrence_individual
+                                GROUP BY scrubbed_taxonomic_status
+                                ORDER By total DESC ;")
+  
+  #   scrubbed_taxonomic_status     total
+  # 1                  Accepted 269912633
+  # 2                No opinion  10912712
+  # 3                      <NA>   3640826
+  
+  tax_status_breakdown %>%
+    rename(count=total)%>%
+    mutate(pct = round((count/total$count)*100,digits = 3))
+  
+  # scrubbed_taxonomic_status     count    pct
+  # 1                  Accepted 269912633 94.884
+  # 2                No opinion  10912712  3.836
+  # 3                      <NA>   3640826  1.280
 
-
-
+  #total number failing names =
+    # (assuming accepted is good) 100-94.884 =5.116
+    # total$count-269912633 =14553538
+  # (assuming accepted or no opinion is good) = 1.280
+  # total$count-269912633 = 3640826
+  
+  
+  
 # annotation table
 
 # geovalidation
@@ -183,23 +199,24 @@ library(tidyverse)
   correct_names <- BIEN:::.BIEN_sql("SELECT count(*) AS total
                                     FROM view_full_occurrence_individual
                                     WHERE tnrs_name_matched_score=1
-                                    AND scrubbed_taxonomic_status = 'Accepted' ;")
+                                    AND matched_taxonomic_status = 'Accepted' ;")
 
-  #200901148 names correct (assuming accepted = correct)
-  #83565023 names incorrect
-
-  (correct_names$total/total$count)*100 #70.62% are definitely correct,29.38% wrong
+  #190301322 names correct (assuming accepted = correct)
   total$count - correct_names$total
-  
+  #94164849 names incorrect
+
+  (correct_names$total/total$count)*100 #66.90% are definitely correct,33.10% wrong
+  (1-correct_names$total/total$count)*100
   
   possibly_correct_names <- BIEN:::.BIEN_sql("SELECT count(*) AS total
                                     FROM view_full_occurrence_individual
                                     WHERE tnrs_name_matched_score=1
-                                    AND scrubbed_taxonomic_status IN ('Accepted','No opinion') ;")
+                                    AND matched_taxonomic_status IN ('Accepted','No opinion') ;")
 
-  #207788578 names possibly correct (assuming accepted or no opinion = correct)
-  #76677593 names possibly wrong
-  (possibly_correct_names$total/total$count)*100 # 73.04% are definitely correct,26.95% wrong
+  #197188752 names possibly correct (assuming accepted or no opinion = correct)
+  #87277419 names possibly wrong
+  (possibly_correct_names$total/total$count)*100 # 69.32% are possibly correct,30.68% wrong
+  (1-possibly_correct_names$total/total$count)*100
   total$count - possibly_correct_names$total
   
 
