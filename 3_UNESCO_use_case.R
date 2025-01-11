@@ -1,3 +1,5 @@
+# Note: the values given by this analyses may differ slightly from those given in the UNESCO report, due to minor differences in spatial polygons and the BIEN database.
+
 
 library(wdpar)
 library(BIEN)

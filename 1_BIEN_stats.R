@@ -559,3 +559,39 @@ BIEN_occs <- BIEN:::.BIEN_sql("SELECT longitude, latitude
 
 
 plot_md <- BIEN::BIEN_plot_metadata(fetch.query=FALSE)
+
+###############################################
+
+# GNRS 
+
+# How many records initially have valid country information? #44,705,332
+
+  countries_initially_correct <- BIEN:::.BIEN_sql("SELECT COUNT(country) as total
+                   FROM view_full_occurrence_individual
+                   WHERE country_verbatim = country
+                   AND country_verbatim IS NOT NULL ;")
+
+  round((countries_initially_correct$total/total$count)*100,3) #15.716%
+
+# How many records have valid country information after cleaning? #269,434,901
+
+  countries_correct_after_cleaning <- BIEN:::.BIEN_sql("SELECT COUNT(country) as total
+                   FROM view_full_occurrence_individual
+                   WHERE country IS NOT NULL ;")
+  
+  round((countries_correct_after_cleaning$total/total$count)*100,3) #94.716%
+
+# How many records have country information? #269,434,901
+
+  countries_with_info <- BIEN:::.BIEN_sql("SELECT COUNT(country) as total
+                   FROM view_full_occurrence_individual
+                   WHERE country_verbatim IS NOT NULL;")
+  
+  
+# Country breakdown
+country_breakdown <- 
+    BIEN:::.BIEN_sql(query = "SELECT country, count(*) AS total
+                            FROM view_full_occurrence_individual
+                            GROUP BY country
+                            ORDER BY total DESC;")
+
