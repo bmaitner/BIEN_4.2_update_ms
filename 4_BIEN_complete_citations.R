@@ -25,8 +25,10 @@ library(BIEN)
   
 # Non-trait data citations
   
-  
+  nontrait_citations <- BIEN_metadata_citation(dataframe = occ_ids,
+                                               bibtex_file = "citations/BIEN_42_nontrait_citations.bib")  
 
+  
 # Total number of herbaria included? #804
   
   datasources <- occ_ids$datasource_id %>% na.omit()
