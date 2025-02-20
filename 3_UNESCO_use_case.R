@@ -35,14 +35,20 @@ if(!file.exists(file.path(temp_dir,"all_unesco_obs.gz.parquet") )){
   
   sf_use_s2(FALSE)
   
+  # Union, buffer, and simplify to make things easier on the BIEN server.
+  # Complicated polygons are taxing.
+  
   unesco %>%
     st_make_valid() %>%
     st_union() -> unesco_union
   
+  st_buffer(x = unesco_union,dist = 1) %>%
+    st_simplify(dTolerance = 1) -> unesco_union_small
+  
   # run the BIEN query
   
   all_unesco_obs <-      
-    BIEN_occurrence_sf(sf = unesco_union,
+    BIEN_occurrence_sf(sf = unesco_union_small,
                        cultivated = TRUE,
                        native.status = TRUE,
                        natives.only = FALSE,
@@ -51,7 +57,9 @@ if(!file.exists(file.path(temp_dir,"all_unesco_obs.gz.parquet") )){
                        new.world = NULL,
                        all.taxonomy = TRUE,
                        political.boundaries = FALSE,
-                       fetch.query=FALSE)
+                       fetch.query=FALSE,
+                       only.geovalid = FALSE)
+  
   
   #save the output as a parquet file
   
@@ -82,9 +90,28 @@ all_unesco_obs %>%
   st_join(y = unesco,
           left = FALSE) -> all_unesco_obs
 
+# How many taxa, going by the verbatim name?
+
+  length(unique(all_unesco_obs$verbatim_scientific_name)) #90414
+
+# How many names after taxonomic cleaning?
+  
+  all_unesco_obs %>%
+    filter(is_geovalid == 1)%>%
+    pull(scrubbed_species_binomial)%>%
+    unique()%>%
+    length() #59475
+  
+
+  
 # write the output (sans the geometry)
 
 all_unesco_obs %>%
   st_drop_geometry() %>%
   write.csv(file = "output/occurrences_in_UNESCO_sites.csv")
 
+####################################################
+
+# What about without cleaning?
+
+  # need to update the occurrences sf function to optionally return non-geovalid stuff
