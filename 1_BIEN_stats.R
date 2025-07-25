@@ -471,9 +471,6 @@ correct_names_geovalid_and_not_centroid$total/total$count #0.5596075
 
 # How many unique names are in BIEN?
 
-bien_head$verbatim_scientific_name
-bien_head$name_submitted
-
 BIEN:::.BIEN_sql("SELECT count( DISTINCT(verbatim_scientific_name)) AS total_names
   FROM view_full_occurrence_individual ;") #1323320
 
@@ -490,6 +487,16 @@ trait_obs <- BIEN:::.BIEN_sql("SELECT count(*)
 FROM agg_traits
 WHERE trait_value IS NOT NULL
 AND trait_name IS NOT NULL ;") #25 932 454
+
+trait_counts <-
+  BIEN:::.BIEN_sql(query = "SELECT DISTINCT trait_name,count(*)
+                          FROM agg_traits
+                          WHERE trait_name IS NOT NULL 
+                          GROUP BY trait_name ;")
+
+write.csv(x = trait_counts,
+          file = "tables/trait_counts.csv",
+          row.names = FALSE)
 
 ######################
 
