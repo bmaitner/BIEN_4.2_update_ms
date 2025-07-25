@@ -601,4 +601,24 @@ country_breakdown <-
                             FROM view_full_occurrence_individual
                             GROUP BY country
                             ORDER BY total DESC;")
+#########################################
+
+# Count of observations from trait data that didn't come from plot data?
+
+trait_obs_count <- 
+  BIEN:::.BIEN_sql(query = "SELECT COUNT(*)
+                            FROM agg_traits 
+                          WHERE plant_trait_files != 'analytical_stem'
+                          AND latitude IS NOT NULL
+                          AND longitude IS NOT NULL ;")
+
+
+
+
+
+
+
+trait_head$plant_trait_files
+
+
 
